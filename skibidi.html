@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>Our Love Story</title>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+    :root{
+        --bg-overlay: linear-gradient(135deg, rgba(255,182,193,0.14), rgba(255,105,180,0.12));
+        --accent: #ff6fa3;
+        --accent-2: #ff99b7;
+        --glass: rgba(255,255,255,0.06);
+        --glass-2: rgba(255,255,255,0.08);
+        --text-soft: rgba(255,255,255,0.95);
+        --duration: 1s;
+        --slide-interval: 5000; 
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Montserrat,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    body{
+        overflow:hidden;
+        background:#000;
+        color:var(--text-soft);
+        -webkit-font-smoothing:antialiased;
+    }
+    .stage{
+        position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+        user-select:none;
+    }
+    .bg-wrap{position:absolute;inset:0;overflow:hidden;z-index:0}
+    .bg-slide{
+        position:absolute;inset:0;background-size:cover;background-position:center center;
+        transform-origin:center;
+        opacity:0;transition:opacity 1.6s ease, transform 6s ease;
+        filter:blur(6px) brightness(0.75);
+    }
+    .bg-slide.visible{
+        opacity:1;filter:blur(0px) brightness(0.76);
+        transform:scale(1.06);
+    }
+    .overlay{
+        position:absolute;inset:0;
+        background: radial-gradient(ellipse at center, rgba(255,255,255,0.02), rgba(0,0,0,0.3)),
+                                linear-gradient(120deg, rgba(255,192,203,0.07), rgba(255,105,180,0.06));
+        mix-blend-mode:soft-light;
+        pointer-events:none;
+        z-index:1;
+    }
+    .tint{
+        position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.35));
+        z-index:1;pointer-events:none;
+    }
+    .recap{
+        position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
+        background:linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.6));
+        transition:opacity 1s ease, transform 1s ease;
+    }
+    .recap.hidden{opacity:0;pointer-events:none;transform:scale(.995)}
+    .recap-inner{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .recap-slide{
+        position:absolute;width:100%;height:100%;background-size:cover;background-position:center;
+        opacity:0;transition:opacity 1.2s ease;display:flex;align-items:end;justify-content:center;
+        transform-origin:center center;
+    }
+    .recap-slide.show{opacity:1}
+    .recap-slide .caption{
+        margin-bottom:8vh;
+        text-align:center;
+        font-family: 'Great Vibes', cursive;
+        font-size:clamp(22px,4vw,44px);
+        color:var(--text-soft);
+        text-shadow:0 6px 28px rgba(0,0,0,0.6), 0 0 18px rgba(255,105,180,0.18);
+        backdrop-filter: blur(4px);
+        padding:8px 18px;border-radius:12px;
+    }
+    .recap-progress{
+        position:absolute;left:50%;transform:translateX(-50%);bottom:6vh;display:flex;gap:6px;
+    }
+    .recap-dot{
+        width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.18);box-shadow:0 2px 8px rgba(0,0,0,0.6);
+    }
+    .recap-dot.active{background:var(--accent);box-shadow:0 6px 20px rgba(255,105,180,0.16)}
+    .heart-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+    .heart{position:absolute;width:20px;height:20px;opacity:0;transform:translateY(0) scale(0.8);animation:heart-float 6s linear infinite}
+    @keyframes heart-float{
+        0%{opacity:0;transform:translateY(40vh) scale(0.6)}
+        10%{opacity:1}
+        80%{opacity:1;transform:translateY(-40vh) scale(1)}
+        100%{opacity:0;transform:translateY(-80vh) scale(0.8)}
+    }
+    .heart svg{filter:drop-shadow(0 6px 18px rgba(255,105,180,0.18))}
+    .music-btn{
+        position:fixed;right:20px;top:20px;z-index:12;display:flex;align-items:center;gap:12px;
+        background:linear-gradient(180deg,var(--glass),var(--glass-2));
+        border-radius:14px;padding:10px 12px;backdrop-filter:blur(10px);
+        box-shadow:0 6px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+        cursor:pointer;transition:transform .18s ease, box-shadow .18s;
+    }
+    .music-btn:active{transform:translateY(1px)}
+    .music-icon{width:34px;height:34;display:inline-grid;place-items:center;color:var(--text-soft)}
+    .music-label{font-size:13px;color:rgba(255,255,255,0.9);font-weight:600;}
+    .main{
+        position:relative;z-index:11;display:flex;align-items:center;justify-content:center;flex-direction:column;
+        text-align:center;padding:6vh 5vw;pointer-events:none;
+    }
+    .card{
+        width:min(900px,94vw);
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.04);
+        border-radius:20px;padding:48px 36px;backdrop-filter:blur(6px);
+        box-shadow:0 12px 40px rgba(0,0,0,0.55);
+        pointer-events:auto;
+        transition:transform .5s var(--duration), opacity .5s;
+    }
+    .lead{
+        font-family:'Great Vibes',cursive;
+        color:var(--text-soft);
+        font-size:clamp(28px,5vw,54px);
+        text-shadow:0 10px 28px rgba(255,105,180,0.12);
+        margin:0 0 12px 0;
+        animation:glow 3s ease-in-out infinite;
+    }
+    @keyframes glow{
+        0%,100%{text-shadow:0 6px 24px rgba(255,105,180,0.06)}
+        50%{text-shadow:0 10px 48px rgba(255,105,180,0.18)}
+    }
+    .question{
+        font-size:clamp(16px,3vw,20px); margin:0 0 18px 0;color:rgba(255,255,255,0.94);
+        background:transparent;
+    }
+    .btn-row{display:flex;gap:14px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+    .btn{
+        border:0;padding:12px 20px;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+        color:var(--text-soft);font-weight:700;cursor:pointer;backdrop-filter:blur(6px);
+        box-shadow:0 6px 18px rgba(0,0,0,0.45), 0 0 10px rgba(255,105,180,0.06) inset;
+        transition:transform .18s ease, box-shadow .18s, background .25s;
+        font-size:16px;
+    }
+    .btn:hover{transform:translateY(-4px);box-shadow:0 18px 38px rgba(255,105,180,0.14)}
+    .btn.yes{background:linear-gradient(180deg,var(--accent),var(--accent-2)); color:#fff}
+    .btn.no{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01)); color:#fff}
+    .sparkles{position:absolute;inset:0;pointer-events:none;z-index:9}
+    .shake{animation:shake .6s cubic-bezier(.36,.07,.19,.97) both}
+    @keyframes shake{
+        10%,90%{transform:translateX(-1px)}
+        20%,80%{transform:translateX(2px)}
+        30%,50%,70%{transform:translateX(-4px)}
+        40%,60%{transform:translateX(4px)}
+    }
+    .final{
+        position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;flex-direction:column;
+        background:linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.7));
+        opacity:0;pointer-events:none;transition:opacity .9s ease;
+    }
+    .final.visible{opacity:1;pointer-events:auto}
+    .final-card{
+        width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+        background-size:cover;background-position:center;padding:6vh 4vw;position:relative;
+    }
+    .final-message{
+        position:absolute;bottom:12vh;left:50%;transform:translateX(-50%);text-align:center;
+        font-family:'Great Vibes',cursive;color:var(--text-soft);font-size:clamp(26px,4vw,48px);
+        text-shadow:0 10px 40px rgba(255,105,180,0.24);padding:10px 18px;border-radius:10px;
+        background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+        animation:final-pulse 2.6s ease-in-out infinite;
+        backdrop-filter:blur(6px);
+    }
+    @keyframes final-pulse{
+        0%,100%{transform:translateX(-50%) scale(1)}
+        50%{transform:translateX(-50%) scale(1.03)}
+    }
+    @media (max-width:720px){
+        .card{padding:28px 18px;border-radius:16px}
+        .music-label{display:none}
+        .music-btn{right:12px;top:12px;padding:8px}
+    }
+    .card{
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+    }
+    .lead, .question, .btn{
+        background: transparent !important;
+        text-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+    .music-btn{
+        background: transparent !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+    }
+    .final-card{
+        background-color: transparent !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+    }
+    .final-message{
+        background: transparent !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        text-shadow: 0 8px 30px rgba(255,105,180,0.18);
+    }
+</style>
+</head>
+<body>
+<div class="stage">
+    <div class="bg-wrap" id="bgWrap"></div>
+    <div class="overlay"></div>
+    <div class="tint"></div>
+    <div class="recap" id="recap">
+        <div class="recap-inner" id="recapInner"></div>
+        <div class="recap-progress" id="recapProgress"></div>
+        <div class="heart-layer" id="recapHearts"></div>
+    </div>
+    <div class="music-btn" id="musicBtn" title="Toggle music">
+        <div class="music-icon" id="musicIcon">🔈</div>
+        <div class="music-label" id="musicLabel">Mute</div>
+    </div>
+    <div class="main" id="main" aria-hidden="true">
+        <div class="card" id="card">
+            <h1 class="lead">From the moment we met, my world changed... 💖</h1>
+            <p class="question">Will you be my Valentine?</p>
+            <div class="btn-row" id="btnRow">
+                <button class="btn yes" id="yesBtn">YES 💕</button>
+                <button class="btn no" id="noBtn">NO 😶</button>
+            </div>
+        </div>
+    </div>
+    <canvas id="confettiCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:19"></canvas>
+    <div class="final" id="final">
+        <div class="final-card" id="finalCard"></div>
+        <div class="final-message" id="finalMessage">You just made me the happiest person alive. I love you forever 💞</div>
+    </div>
+</div>
+<audio id="bgAudio" loop preload="auto"></audio>
+<script>
+const bgImages = ['WhatsApp Image 2026-02-14 at 00.24.17.jpeg','WhatsApp Image 2026-02-14 at 00.25.55.jpeg','WhatsApp Image 2026-02-14 at 00.25.55 (3).jpeg'];
+const recapPhotos = [{src:'WhatsApp Image 2026-02-14 at 00.24.24 (1).jpeg',caption:'Lab Masti😭😭'},{src:'WhatsApp Image 2026-02-14 at 00.24.18 (1).jpeg',caption:'freshers😜'},{src:'WhatsApp Image 2026-02-14 at 00.24.20.jpeg',caption:'gang day🤙'}];
+const musicSrc = '/Users/soh.mm__/Downloads/Sar Sukhachi Shravani-(SambalpuriStar.In).mp3';
+const finalImage = 'WhatsApp Image 2026-02-14 at 00.25.56 (3).jpeg';
+const finalText = 'माझी प्रिय वीणा, नेहमी माझ्यासोबत राहिल्याबद्दल धन्यवाद 🥹';
+const SLIDE_INTERVAL = 5000; 
+const RECAP_DURATION_PER_PHOTO = 4200; 
+const bgWrap = document.getElementById('bgWrap');
+const recap = document.getElementById('recap');
+const recapInner = document.getElementById('recapInner');
+const recapProgress = document.getElementById('recapProgress');
+const recapHearts = document.getElementById('recapHearts');
+const musicBtn = document.getElementById('musicBtn');
+const musicIcon = document.getElementById('musicIcon');
+const musicLabel = document.getElementById('musicLabel');
+const bgAudio = document.getElementById('bgAudio');
+const main = document.getElementById('main');
+const yesBtn = document.getElementById('yesBtn');
+const noBtn = document.getElementById('noBtn');
+const btnRow = document.getElementById('btnRow');
+const card = document.getElementById('card');
+const final = document.getElementById('final');
+const finalCard = document.getElementById('finalCard');
+const finalMessage = document.getElementById('finalMessage');
+const confettiCanvas = document.getElementById('confettiCanvas');
+let bgIndex = 0;
+let bgElems = [];
+let bgTimer = null;
+function buildBackgrounds(){
+    bgWrap.innerHTML = '';
+    bgElems = [];
+    bgImages.forEach((src, i) => {
+        const el = document.createElement('div');
+        el.className = 'bg-slide';
+        el.style.backgroundImage = `url('${src}')`;
+        if(i===0) el.classList.add('visible');
+        bgWrap.appendChild(el);
+        bgElems.push(el);
+    });
+}
+function startBgLoop(interval = SLIDE_INTERVAL){
+    if(bgTimer) clearInterval(bgTimer);
+    bgTimer = setInterval(()=> {
+        if(!bgElems.length) return;
+        const prev = bgIndex;
+        bgIndex = (bgIndex + 1) % bgElems.length;
+        bgElems[prev].classList.remove('visible');
+        bgElems[bgIndex].classList.add('visible');
+    }, interval);
+}
+function buildRecap(){
+    recapInner.innerHTML = '';
+    recapProgress.innerHTML = '';
+    recapPhotos.forEach((p, idx) => {
+        const slide = document.createElement('div');
+        slide.className = 'recap-slide';
+        slide.style.backgroundImage = `url('${p.src}')`;
+        slide.dataset.idx = idx;
+        const cap = document.createElement('div');
+        cap.className = 'caption';
+        cap.innerText = p.caption || '';
+        slide.appendChild(cap);
+        recapInner.appendChild(slide);
+        const dot = document.createElement('div');
+        dot.className = 'recap-dot' + (idx===0 ? ' active' : '');
+        recapProgress.appendChild(dot);
+    });
+    recapHearts.innerHTML = '';
+    for(let i=0;i<12;i++){
+        const h = document.createElement('div');
+        h.className = 'heart';
+        h.style.left = Math.random()*100 + '%';
+        h.style.animationDelay = (Math.random()*3) + 's';
+        h.style.opacity = 0.9;
+        h.style.transform = `translateY(${20 + Math.random()*40}vh)`;
+        h.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-8-4.66-8-11A5 5 0 0112 5a5 5 0 018 5c0 6.34-8 11-8 11z" fill="url(#g)"/><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#ff6fa3"/><stop offset="1" stop-color="#ffd1e6"/></linearGradient></defs></svg>`;
+        recapHearts.appendChild(h);
+    }
+}
+async function playRecap(){
+    buildRecap();
+    const slides = Array.from(document.querySelectorAll('.recap-slide'));
+    const dots = Array.from(document.querySelectorAll('.recap-dot'));
+    if(!slides.length) { endRecap(); return; }
+    let i = 0;
+    slides[i].classList.add('show');
+    dots[i].classList.add('active');
+    try { await bgAudio.play(); } catch(e){}
+    const showNext = () => {
+        slides[i].classList.remove('show');
+        dots[i].classList.remove('active');
+        i++;
+        if(i >= slides.length){ endRecap(); return; }
+        slides[i].classList.add('show');
+        dots[i].classList.add('active');
+        setTimeout(showNext, RECAP_DURATION_PER_PHOTO);
+    };
+    setTimeout(showNext, RECAP_DURATION_PER_PHOTO);
+}
+function endRecap(){
+    recap.classList.add('hidden');
+    setTimeout(()=> {
+        recap.style.display = 'none';
+        main.setAttribute('aria-hidden','false');
+        main.style.pointerEvents = 'auto';
+    }, 900);
+}
+bgAudio.src = musicSrc;
+bgAudio.volume = 0.9;
+let audioMuted = false;
+function tryAutoplay(){
+    bgAudio.play().then(()=> {
+        audioMuted = false;
+        updateMusicUI();
+    }).catch(()=> {
+        showTapToPlay();
+    });
+}
+function showTapToPlay(){
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:30;background:linear-gradient(180deg,rgba(0,0,0,0.35),rgba(0,0,0,0.6));backdrop-filter:blur(2px)';
+    overlay.innerHTML = `<div style="text-align:center;color:white;padding:28px 34px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));backdrop-filter: blur(6px);cursor:pointer"><div style="font-family:Great Vibes, cursive;font-size:36px;margin-bottom:8px">Tap to play our song</div><div style="font-size:14px;opacity:.9">If sound doesn't start, check your browser audio settings</div></div>`;
+    overlay.addEventListener('click', async () => {
+        try{ await bgAudio.play(); audioMuted = false; updateMusicUI(); }catch(e){}
+        overlay.remove();
+    });
+    document.body.appendChild(overlay);
+}
+function updateMusicUI(){
+    if(bgAudio.muted || audioMuted){
+        musicIcon.textContent = '🔇';
+        musicLabel.textContent = 'Muted';
+    } else {
+        musicIcon.textContent = '🔊';
+        musicLabel.textContent = 'Music';
+    }
+}
+musicBtn.addEventListener('click', ()=> {
+    if(bgAudio.paused){
+        bgAudio.play().catch(()=>{});
+        bgAudio.muted = false;
+        audioMuted = false;
+    } else {
+        bgAudio.muted = !bgAudio.muted;
+        audioMuted = bgAudio.muted;
+    }
+    updateMusicUI();
+});
+let noDisabled = false;
+function onClickNo(){
+    if(noDisabled) return;
+    card.classList.add('shake');
+    setTimeout(()=> card.classList.remove('shake'), 650);
+    noDisabled = true;
+    btnRow.innerHTML = '';
+    const btnA = document.createElement('button'); btnA.className='btn yes'; btnA.textContent = 'YES 💖';
+    const btnB = document.createElement('button'); btnB.className='btn yes'; btnB.textContent = 'YES 💖';
+    btnRow.appendChild(btnA); btnRow.appendChild(btnB);
+    spawnSmallHeartsAt(btnA, 12);
+    spawnSmallHeartsAt(btnB, 12);
+    btnA.addEventListener('click', onClickYes);
+    btnB.addEventListener('click', onClickYes);
+    const prevLead = document.querySelector('.lead').textContent;
+    document.querySelector('.lead').textContent = 'How dare you 😤💔';
+    setTimeout(()=> document.querySelector('.lead').textContent = prevLead, 1800);
+}
+function spawnSmallHeartsAt(el, count=8){
+    const rect = el.getBoundingClientRect();
+    for(let i=0;i<count;i++){
+        const h = document.createElement('div');
+        h.style.position='fixed';
+        h.style.left = (rect.left + rect.width/2 + (Math.random()*160-80)) + 'px';
+        h.style.top = (rect.top + rect.height/2 + (Math.random()*100-50)) + 'px';
+        h.style.pointerEvents='none';
+        h.style.opacity=1;
+        h.style.fontSize = (10 + Math.random()*12) + 'px';
+        h.style.transition = 'transform 1.4s ease, opacity 1.4s';
+        h.textContent = '💖';
+        document.body.appendChild(h);
+        setTimeout(()=> h.style.transform = `translateY(${ -120 - Math.random()*80 }px) scale(${0.6 + Math.random()*0.7})`,10);
+        setTimeout(()=> h.style.opacity = 0, 1100 + Math.random()*200);
+        setTimeout(()=> h.remove(), 1600 + Math.random()*400);
+    }
+}
+function onClickYes(){
+    startConfetti();
+    showFinal();
+}
+function showFinal(){
+    finalCard.style.backgroundImage = `url('${finalImage}')`;
+    finalMessage.textContent = finalText;
+    final.classList.add('visible');
+}
+const confettiCtx = confettiCanvas.getContext && confettiCanvas.getContext('2d');
+let confettiPieces = [];
+let confettiRunning = false;
+function resizeCanvas(){
+    confettiCanvas.width = innerWidth;
+    confettiCanvas.height = innerHeight;
+}
+resizeCanvas();
+addEventListener('resize', resizeCanvas);
+function startConfetti(){
+    if(!confettiCtx) return;
+    confettiPieces = [];
+    const colors = ['#ff6fa3','#ffd1e6','#ff99b7','#ffffff','#ff8fb3'];
+    for(let i=0;i<120;i++){
+        confettiPieces.push({
+            x: Math.random()*confettiCanvas.width,
+            y: Math.random()*confettiCanvas.height - confettiCanvas.height,
+            r: 6 + Math.random()*10,
+            d: (Math.random()*60)+10,
+            color: colors[Math.floor(Math.random()*colors.length)],
+            tilt: Math.random()*10-5,
+            tiltSpeed: Math.random()*0.1+0.05
+        });
+    }
+    if(!confettiRunning){
+        confettiRunning = true;
+        requestAnimationFrame(renderConfetti);
+    }
+    for(let i=0;i<24;i++){
+        const el = document.createElement('div');
+        el.style.position='fixed';
+        el.style.left = (Math.random()*80+10) + '%';
+        el.style.top = (Math.random()*40+20) + '%';
+        el.style.fontSize = (16+Math.random()*42)+'px';
+        el.style.opacity=0.95;
+        el.style.pointerEvents='none';
+        el.textContent = ['💖','💞','✨'][Math.floor(Math.random()*3)];
+        document.body.appendChild(el);
+        el.animate([{transform:'translateY(0) scale(1)' , opacity:1},{transform:'translateY(-220px) scale(.8)', opacity:0}], {duration:1600+Math.random()*900, easing:'cubic-bezier(.2,.8,.2,1)'});
+        setTimeout(()=> el.remove(), 2200 + Math.random()*1000);
+    }
+}
+function renderConfetti(){
+    confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+    confettiPieces.forEach((p,i)=>{
+        p.tilt += p.tiltSpeed;
+        p.y += Math.sin(p.d) + 0.4 + p.r/5;
+        p.x += Math.cos(p.d);
+        p.d += 0.01;
+        confettiCtx.fillStyle = p.color;
+        confettiCtx.beginPath();
+        confettiCtx.ellipse(p.x + p.tilt, p.y, p.r, p.r*0.6, p.tilt, 0, Math.PI*2);
+        confettiCtx.fill();
+        if(p.y > confettiCanvas.height + 60) {
+            p.x = Math.random()*confettiCanvas.width;
+            p.y = -20;
+        }
+    });
+    if(confettiRunning) requestAnimationFrame(renderConfetti);
+}
+function spawnTinySparkles(){
+    const parent = document.createElement('div');
+    parent.style.position='absolute';
+    parent.style.inset='0';
+    parent.style.pointerEvents='none';
+    parent.style.zIndex=5;
+    document.body.appendChild(parent);
+    for(let i=0;i<12;i++){
+        const s = document.createElement('div');
+        s.style.position='absolute';
+        s.style.left = (20 + Math.random()*60) + '%';
+        s.style.top = (20 + Math.random()*60) + '%';
+        s.style.width = s.style.height = (4 + Math.random()*8) + 'px';
+        s.style.borderRadius = '50%';
+        s.style.background = 'radial-gradient(circle, #fff, rgba(255,105,180,0.18))';
+        s.style.opacity = 0;
+        s.style.transform = 'scale(.6)';
+        s.style.filter = 'blur(.6px)';
+        parent.appendChild(s);
+        const d = 2000 + Math.random()*2400;
+        s.animate([{opacity:0, transform:'scale(.6)'},{opacity:1, transform:'scale(1)'},{opacity:0, transform:'scale(.8)'}], {duration:d, iterations:Infinity, delay:Math.random()*1200});
+    }
+}
+(function init(){
+    finalMessage.textContent = finalText;
+    finalCard.style.backgroundSize = 'cover';
+    finalCard.style.backgroundPosition = 'center';
+    buildBackgrounds();
+    startBgLoop();
+    buildRecap();
+    playRecap();
+    tryAutoplay();
+    spawnTinySparkles();
+    noBtn.addEventListener('click', onClickNo);
+    yesBtn.addEventListener('click', onClickYes);
+    window.addEventListener('keydown', e=>{
+        if(e.key.toLowerCase()==='y') onClickYes();
+        if(e.key.toLowerCase()==='n') onClickNo();
+    });
+    updateMusicUI();
+})();
+document.addEventListener('visibilitychange', ()=> {
+    if(document.hidden) bgAudio.pause();
+    else { bgAudio.play().catch(()=>{}); }
+});
+window._LOVE_CONFIG = {bgImages, recapPhotos, musicSrc, finalImage, finalText, SLIDE_INTERVAL};
+</script>
+</body>
+</html>
